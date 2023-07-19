@@ -1,0 +1,14 @@
+[project]
+name = "lsf_runner"
+version = "0.1.0"
+description = "Utility to start jobs under IBM LSF"
+authors = [
+    {name = "Anton Golovanov"},
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["lsf_runner*"]
