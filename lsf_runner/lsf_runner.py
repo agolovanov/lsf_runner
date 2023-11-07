@@ -46,7 +46,7 @@ def run_job(command, job_number, job_name=None, queue=None, *, use_gpu=False, gp
     if job_name is None:
         job_name = 'job'
 
-    bsub_arguments = ['-J', job_name, '-o', f'logs/{job_name}-%J.out', '-n', str(job_number)]
+    bsub_arguments = ['-J', job_name, '-o', f'logs/{job_name.replace("/", "_")}-%J.out', '-n', str(job_number)]
     if queue is not None:
         bsub_arguments += ['-q', queue]
     if use_gpu:
