@@ -1,6 +1,6 @@
 [project]
 name = "lsf_runner"
-version = "0.2.0"
+version = "0.3.0"
 description = "Utility to start jobs under IBM LSF"
 authors = [
     {name = "Anton Golovanov"},
