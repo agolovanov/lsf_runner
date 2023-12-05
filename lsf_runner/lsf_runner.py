@@ -24,26 +24,30 @@ class GpuParameters:
         return ''.join(['"'] + parameter_list + ['"'])
 
 
-class SpanParameters:
-    span_string: str = ''
+def span_parameters(hosts):
+    return f'span[hosts={hosts}]'
 
-    def __str__(self) -> str:
-        return f'span[{self.span_string}]'
 
-    def __init__(self, hosts):
-        self.span_string = f'hosts={hosts}'
+def resource_usage(memory: str = None):
+    return f'rusage[mem={memory}]'
 
 
 @dataclass
 class ResourceRequirements:
-    span: SpanParameters = None
+    span: str = None
+    resource_usage: str = None
+    affinity: str = None
 
     def __str__(self) -> str:
         parameter_list = []
         if self.span is not None:
-            parameter_list.append(str(self.span))
+            parameter_list.append(self.span)
+        if self.resource_usage is not None:
+            parameter_list.append(self.resource_usage)
+        if self.affinity is not None:
+            parameter_list.append(self.affinity)            
 
-        return f'"{" ".join(parameter_list)}"'
+        return " ".join(parameter_list)
 
 
 def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, gpu_parameters: GpuParameters = None,
