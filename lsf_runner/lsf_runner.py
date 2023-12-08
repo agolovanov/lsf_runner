@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 
 
 def bool_to_str(b):
@@ -50,8 +51,30 @@ class ResourceRequirements:
         return " ".join(parameter_list)
 
 
+def output_file_string(job_name, log_folder='logs'):
+    """
+
+    Parameters
+    ----------
+    job_name : str
+        the name of the job
+    log_folder : str, optional
+        the folder to store logs, by default 'logs'
+
+    Returns
+    -------
+    str
+        output file string (passed to -o)
+    """
+    if not os.path.exists(log_folder):
+        print(f'Creating log folder [{log_folder}]')
+        os.makedirs(log_folder)
+
+    return os.path.join(log_folder, f'{job_name.replace("/", "_")}-%J.out')
+
+
 def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, gpu_parameters: GpuParameters = None,
-            resource_requrements: ResourceRequirements = None, rerunnable=False):
+            resource_requrements: ResourceRequirements = None, rerunnable=False, output_file=None):
     """Run an LSF job
 
     Parameters
@@ -72,13 +95,17 @@ def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, 
         resourse requirements of the job
     rerunnable : bool, optional
         make the program rerunnable or non-rerunnable (-rn flag), by default False
+    output_file : str, optional
+        the name of the file to forward the output to (-o flag)
     """
     import subprocess
 
     if job_name is None:
         job_name = 'job'
+    if output_file is None:
+        output_file = output_file_string(job_name)
 
-    bsub_arguments = ['-J', job_name, '-o', f'logs/{job_name.replace("/", "_")}-%J.out', '-n', str(tasks_number)]
+    bsub_arguments = ['-J', job_name, '-o', output_file, '-n', str(tasks_number)]
     if queue is not None:
         bsub_arguments += ['-q', queue]
 
