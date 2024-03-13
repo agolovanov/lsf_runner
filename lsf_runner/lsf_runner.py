@@ -1,5 +1,38 @@
 from dataclasses import dataclass
 import os
+import subprocess
+import json
+
+
+class Job:
+    def __init__(self, job_id):
+        self.id = job_id
+
+    def peek(self):
+        print(subprocess.check_output(['bpeek', str(self.id)]).decode())
+
+    def check_status(self):
+        """Checks the current status of the job
+
+        Returns
+        -------
+        str
+            Status, one of the following: PEND, RUN, DONE, EXIT
+        """
+        try:
+            job_status = subprocess.check_output(['bjobs', '-o', 'all', '-json', str(self.id)], stderr=subprocess.DEVNULL)
+            job_status_json = json.loads(job_status.decode())
+            return job_status_json['RECORDS'][0]['STAT']
+        except subprocess.CalledProcessError as e:
+            return e.stdout
+        except Exception as e:
+            return f'Exception: {e}'
+
+    def __str__(self) -> str:
+        return f'Job #{self.id}'
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 def bool_to_str(b):
@@ -9,6 +42,7 @@ def bool_to_str(b):
 @dataclass
 class GpuParameters:
     number: int = 1
+    mode: str = None
     job_exclusive: bool = True
     memory_required: str = None
     model: str = None
@@ -16,6 +50,8 @@ class GpuParameters:
     def __str__(self) -> str:
         parameter_list = []
         parameter_list.append(f'num={self.number}')
+        if self.mode is not None:
+            parameter_list.append(f':mode={self.mode}')
         parameter_list.append(f':j_exclusive={bool_to_str(self.job_exclusive)}')
         if self.model is not None:
             parameter_list.append(f':gmodel={self.model}')
@@ -46,7 +82,7 @@ class ResourceRequirements:
         if self.resource_usage is not None:
             parameter_list.append(self.resource_usage)
         if self.affinity is not None:
-            parameter_list.append(self.affinity)            
+            parameter_list.append(self.affinity)       
 
         return " ".join(parameter_list)
 
@@ -73,9 +109,36 @@ def output_file_string(job_name, log_folder='logs'):
     return os.path.join(log_folder, f'{job_name.replace("/", "_")}-%J.out')
 
 
+def retrieve_bsub_job_id(s: str):
+    """
+
+    Parameters
+    ----------
+    s : str
+        string for bsub submission
+
+    Returns
+    -------
+    int
+        JOB ID corresponding to the BSUB submission
+
+    Raises
+    ------
+    ValueError
+        If the string is incorrect
+    """
+    import re
+    match = re.search(r"<(\d+)>", s)
+
+    if match:
+        return int(match.group(1))
+    else:
+        raise ValueError(f'No job ID found in string [{s}]')
+
+
 def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, gpu_parameters: GpuParameters = None,
             resource_requrements: ResourceRequirements = None, rerunnable=False, output_file=None):
-    """Run an LSF job
+    """Submits an LSF job
 
     Parameters
     ----------
@@ -97,9 +160,12 @@ def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, 
         make the program rerunnable or non-rerunnable (-rn flag), by default False
     output_file : str, optional
         the name of the file to forward the output to (-o flag)
-    """
-    import subprocess
 
+    Returns
+    -------
+    lsf_runner.Job
+        The Job class object corresponding to the submitted job.
+    """
     if job_name is None:
         job_name = 'job'
     if output_file is None:
@@ -123,4 +189,6 @@ def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, 
 
     lsf_command = ['bsub'] + bsub_arguments + [command]
     print(f'Running: {" ".join(lsf_command)}')
-    subprocess.run(lsf_command)
+    job_id = retrieve_bsub_job_id(subprocess.check_output(lsf_command, stderr=subprocess.DEVNULL).decode())
+
+    return Job(job_id)
