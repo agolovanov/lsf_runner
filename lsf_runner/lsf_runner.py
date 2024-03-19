@@ -188,7 +188,7 @@ def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, 
         bsub_arguments += ['-rn']
 
     lsf_command = ['bsub'] + bsub_arguments + [command]
-    print(f'Running: {" ".join(lsf_command)}')
+    print(f'Running: {" ".join(lsf_command)}', flush=True)
     job_id = retrieve_bsub_job_id(subprocess.check_output(lsf_command, stderr=subprocess.DEVNULL).decode())
 
     return Job(job_id)
