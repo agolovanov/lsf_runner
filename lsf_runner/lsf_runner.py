@@ -11,7 +11,7 @@ class Job:
     def peek(self):
         print(subprocess.check_output(['bpeek', str(self.id)]).decode())
 
-    def check_status(self):
+    def check_status(self) -> str:
         """Checks the current status of the job
 
         Returns
@@ -27,6 +27,30 @@ class Job:
             return e.stdout
         except Exception as e:
             return f'Exception: {e}'
+
+    def wait_complete(self, check_period=10):
+        """Waits until the job is completed (by achieving either DONE or EXIT status)
+
+        Parameters
+        ----------
+        check_period : float
+            The time interval (in s) for checking if the job is completed, by default 10
+
+        Returns
+        -------
+        str
+            the exit status of the job (DONE or EXIT)
+        """
+        import time
+
+        time.sleep(check_period)
+
+        while (st := self.check_status()) != 'DONE' and st != 'EXIT':
+            if st != 'PEND' and st != 'RUN':
+                print(f'{self} status {st}')
+            time.sleep(check_period)
+
+        return st
 
     def __str__(self) -> str:
         return f'Job #{self.id}'
@@ -136,8 +160,26 @@ def retrieve_bsub_job_id(s: str):
         raise ValueError(f'No job ID found in string [{s}]')
 
 
+def __run_bsub_command(bsub_command, ensure_completion=False):
+    print(f'Running: {" ".join(bsub_command)}', flush=True)
+    job_id = retrieve_bsub_job_id(subprocess.check_output(bsub_command, stderr=subprocess.DEVNULL).decode())
+    job = Job(job_id)
+
+    if ensure_completion:
+        st = job.wait_complete()
+
+        if st == 'EXIT':
+            print(f'{job} received an EXIT status, rerunning', flush=True)
+            return __run_bsub_command(bsub_command, True)
+
+        print(f'{job} successfully finished', flush=True)
+
+    return Job(job_id)
+
+
 def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, gpu_parameters: GpuParameters = None,
-            resource_requrements: ResourceRequirements = None, rerunnable=False, output_file=None):
+            resource_requrements: ResourceRequirements = None, rerunnable=False, output_file=None,
+            ensure_completion: bool = False):
     """Submits an LSF job
 
     Parameters
@@ -160,6 +202,8 @@ def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, 
         make the program rerunnable or non-rerunnable (-rn flag), by default False
     output_file : str, optional
         the name of the file to forward the output to (-o flag)
+    ensure_completion: bool, optional
+        whether wait for the completion of the job and restart if its status is not DONE, by default False
 
     Returns
     -------
@@ -188,7 +232,4 @@ def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, 
         bsub_arguments += ['-rn']
 
     lsf_command = ['bsub'] + bsub_arguments + [command]
-    print(f'Running: {" ".join(lsf_command)}', flush=True)
-    job_id = retrieve_bsub_job_id(subprocess.check_output(lsf_command, stderr=subprocess.DEVNULL).decode())
-
-    return Job(job_id)
+    return __run_bsub_command(lsf_command, ensure_completion)
