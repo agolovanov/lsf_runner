@@ -17,7 +17,7 @@ class Job:
         Returns
         -------
         str
-            Status, one of the following: PEND, RUN, DONE, EXIT
+            Status, one of the following: PEND, RUN, DONE, EXIT, SSUSP
         """
         try:
             job_status = subprocess.check_output(['bjobs', '-o', 'all', '-json', str(self.id)], stderr=subprocess.DEVNULL)
@@ -28,13 +28,15 @@ class Job:
         except Exception as e:
             return f'Exception: {e}'
 
-    def wait_complete(self, check_period=10):
+    def wait_complete(self, check_period=10, exit_wait_period=30):
         """Waits until the job is completed (by achieving either DONE or EXIT status)
 
         Parameters
         ----------
         check_period : float
             The time interval (in s) for checking if the job is completed, by default 10
+        exit_wait_period : float
+            The time interval (in s) for checking if the job with the EXIT status wasn't rerun, by default 30
 
         Returns
         -------
@@ -49,6 +51,13 @@ class Job:
             if st != 'PEND' and st != 'RUN':
                 print(f'{self} status {st}')
             time.sleep(check_period)
+
+        if st == 'EXIT':
+            time.sleep(exit_wait_period)
+            st = self.check_status()
+            if st != 'EXIT':
+                print(f'Job {self} appears to have restarted')
+                return self.wait_complete()
 
         return st
 
