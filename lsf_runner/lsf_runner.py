@@ -20,7 +20,8 @@ class Job:
             Status, one of the following: PEND, RUN, DONE, EXIT, SSUSP
         """
         try:
-            job_status = subprocess.check_output(['bjobs', '-o', 'all', '-json', str(self.id)], stderr=subprocess.DEVNULL)
+            job_status = subprocess.check_output(['bjobs', '-o', 'all', '-json', str(self.id)],
+                                                 stderr=subprocess.DEVNULL)
             job_status_json = json.loads(job_status.decode())
             return job_status_json['RECORDS'][0]['STAT']
         except subprocess.CalledProcessError as e:
@@ -115,7 +116,7 @@ class ResourceRequirements:
         if self.resource_usage is not None:
             parameter_list.append(self.resource_usage)
         if self.affinity is not None:
-            parameter_list.append(self.affinity)       
+            parameter_list.append(self.affinity)
 
         return " ".join(parameter_list)
 
