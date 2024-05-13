@@ -170,7 +170,7 @@ def retrieve_bsub_job_id(s: str):
         raise ValueError(f'No job ID found in string [{s}]')
 
 
-def __run_bsub_command(bsub_command, ensure_completion=False):
+def __run_bsub_command(bsub_command, ensure_completion=False) -> Job:
     print(f'Running: {" ".join(bsub_command)}', flush=True)
     job_id = retrieve_bsub_job_id(subprocess.check_output(bsub_command, stderr=subprocess.DEVNULL).decode())
     job = Job(job_id)
@@ -189,7 +189,7 @@ def __run_bsub_command(bsub_command, ensure_completion=False):
 
 def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, gpu_parameters: GpuParameters = None,
             resource_requrements: ResourceRequirements = None, rerunnable=False, output_file=None,
-            ensure_completion: bool = False):
+            ensure_completion: bool = False) -> Job:
     """Submits an LSF job
 
     Parameters
