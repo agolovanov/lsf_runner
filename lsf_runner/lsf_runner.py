@@ -174,6 +174,7 @@ def __run_bsub_command(bsub_command, ensure_completion=False) -> Job:
     print(f'Running: {" ".join(bsub_command)}', flush=True)
     job_id = retrieve_bsub_job_id(subprocess.check_output(bsub_command, stderr=subprocess.DEVNULL).decode())
     job = Job(job_id)
+    print(f'Submitted {job}')
 
     if ensure_completion:
         st = job.wait_complete()
