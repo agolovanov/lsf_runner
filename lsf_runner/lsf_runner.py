@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+import json
 import os
 import subprocess
-import json
+from dataclasses import dataclass
 
 
 class Job:
@@ -20,8 +20,9 @@ class Job:
             Status, one of the following: PEND, RUN, DONE, EXIT, SSUSP
         """
         try:
-            job_status = subprocess.check_output(['bjobs', '-o', 'all', '-json', str(self.id)],
-                                                 stderr=subprocess.DEVNULL)
+            job_status = subprocess.check_output(
+                ['bjobs', '-o', 'all', '-json', str(self.id)], stderr=subprocess.DEVNULL
+            )
             job_status_json = json.loads(job_status.decode())
             return job_status_json['RECORDS'][0]['STAT']
         except subprocess.CalledProcessError as e:
@@ -70,7 +71,7 @@ class Job:
 
 
 def bool_to_str(b):
-    return "yes" if b else "no"
+    return 'yes' if b else 'no'
 
 
 @dataclass
@@ -118,7 +119,7 @@ class ResourceRequirements:
         if self.affinity is not None:
             parameter_list.append(self.affinity)
 
-        return " ".join(parameter_list)
+        return ' '.join(parameter_list)
 
 
 def output_file_string(job_name, log_folder='logs'):
@@ -162,7 +163,8 @@ def retrieve_bsub_job_id(s: str):
         If the string is incorrect
     """
     import re
-    match = re.search(r"<(\d+)>", s)
+
+    match = re.search(r'<(\d+)>', s)
 
     if match:
         return int(match.group(1))
@@ -188,9 +190,19 @@ def __run_bsub_command(bsub_command, ensure_completion=False) -> Job:
     return Job(job_id)
 
 
-def run_job(command, tasks_number, job_name=None, queue=None, *, use_gpu=False, gpu_parameters: GpuParameters = None,
-            resource_requrements: ResourceRequirements = None, rerunnable=False, output_file=None,
-            ensure_completion: bool = False) -> Job:
+def run_job(
+    command,
+    tasks_number,
+    job_name=None,
+    queue=None,
+    *,
+    use_gpu=False,
+    gpu_parameters: GpuParameters = None,
+    resource_requrements: ResourceRequirements = None,
+    rerunnable=False,
+    output_file=None,
+    ensure_completion: bool = False,
+) -> Job:
     """Submits an LSF job
 
     Parameters
