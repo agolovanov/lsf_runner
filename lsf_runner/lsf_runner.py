@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 from dataclasses import dataclass
+from typing import List
 
 
 class Job:
@@ -256,3 +257,16 @@ def run_job(
 
     lsf_command = ['bsub'] + bsub_arguments + [command]
     return __run_bsub_command(lsf_command, ensure_completion)
+
+
+def get_hosts() -> List[str]:
+    """Requests the lists of hosts available to LSF
+
+    Returns
+    -------
+    list
+        the resulting list of hosts
+    """
+    output = subprocess.check_output(['bhosts', '-json', '-o', 'all'])
+    hosts = json.loads(output.decode())
+    return [v['HOST_NAME'] for v in hosts['RECORDS']]
