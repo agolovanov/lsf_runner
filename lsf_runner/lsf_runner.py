@@ -200,6 +200,7 @@ def run_job(
     use_gpu=False,
     gpu_parameters: GpuParameters = None,
     resource_requrements: ResourceRequirements = None,
+    hosts: str = None,
     rerunnable=False,
     output_file=None,
     ensure_completion: bool = False,
@@ -222,6 +223,8 @@ def run_job(
         parameters to use with the GPU
     resource_requrements: lsf_runner.ResourceRequirements
         resourse requirements of the job
+    hosts: str, optional
+        hosts to run the job on
     rerunnable : bool, optional
         make the program rerunnable or non-rerunnable (-rn flag), by default False
     output_file : str, optional
@@ -252,6 +255,10 @@ def run_job(
         else:
             gpu_parameter_string = '-'
         bsub_arguments += ['-gpu', gpu_parameter_string]
+
+    if hosts is not None:
+        bsub_arguments += ['-m', hosts]
+
     if not rerunnable:
         bsub_arguments += ['-rn']
 
