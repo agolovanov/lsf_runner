@@ -98,29 +98,51 @@ class GpuParameters:
 
 
 def span_parameters(hosts):
-    return f'span[hosts={hosts}]'
+    return f'hosts={hosts}'
 
 
 def resource_usage(memory: str = None):
-    return f'rusage[mem={memory}]'
+    return f'mem={memory}'
 
 
-@dataclass
-class ResourceRequirements:
-    span: str = None
-    resource_usage: str = None
-    affinity: str = None
+def resource_requirements(
+    *, select: str = None, span: str = None, resource_usage: str = None, affinity: str = None
+) -> str:
+    """Parameters specifying the resource requirements for the host.
 
-    def __str__(self) -> str:
-        parameter_list = []
-        if self.span is not None:
-            parameter_list.append(self.span)
-        if self.resource_usage is not None:
-            parameter_list.append(self.resource_usage)
-        if self.affinity is not None:
-            parameter_list.append(self.affinity)
+    See: https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=o-r
 
-        return ' '.join(parameter_list)
+    Parameters
+    ----------
+    select : str, optional
+        the select string, by default None
+    span : str, optional
+        the span parameters string, by default None
+
+        Use the `span_parameters` function for assistance
+    resource_usage : str, optional
+        resource usage string, by default None
+
+        Use the `resource_usage` function for assistance
+    affinity : str, optional
+        the affinity string, by default None
+
+    Returns
+    -------
+    str
+        the full string for the resource requirements
+    """
+    parameter_list = []
+    if select is not None:
+        parameter_list.append(f'select[{select}]')
+    if span is not None:
+        parameter_list.append(f'span[{span}]')
+    if resource_usage is not None:
+        parameter_list.append(f'rusage[{resource_usage}]')
+    if affinity is not None:
+        parameter_list.append(f'affinity[{affinity}]')
+
+    return ' '.join(parameter_list)
 
 
 def output_file_string(job_name, log_folder='logs'):
@@ -193,16 +215,16 @@ def __run_bsub_command(bsub_command, ensure_completion=False) -> Job:
 
 def run_job(
     command,
-    tasks_number,
-    job_name=None,
-    queue=None,
+    tasks_number: int = 1,
+    job_name: str = 'job',
+    queue: str = None,
     *,
-    use_gpu=False,
+    use_gpu: bool = False,
     gpu_parameters: GpuParameters = None,
-    resource_requrements: ResourceRequirements = None,
+    resource_requrements: str = None,
     hosts: str = None,
-    rerunnable=False,
-    output_file=None,
+    rerunnable: bool = False,
+    output_file: str = None,
     ensure_completion: bool = False,
 ) -> Job:
     """Submits an LSF job
@@ -212,17 +234,19 @@ def run_job(
     command : str
         the command to run
     tasks_number : int
-        number of tasks in a job
+        number of tasks in a job, by default 1
     job_name : str, optional
-        job name, by default None
+        job name, by default 'job'
     queue : str, optional
         job queue to submit to, by default None
     use_gpu : bool, optional
         request GPU, by default False
     gpu_parameters: lsf_runner.GpuParameters
         parameters to use with the GPU
-    resource_requrements: lsf_runner.ResourceRequirements
+    resource_requrements: str
         resourse requirements of the job
+
+        Use the `resource_requirements` to generate.
     hosts: str, optional
         hosts to run the job on
     rerunnable : bool, optional
@@ -237,8 +261,6 @@ def run_job(
     lsf_runner.Job
         The Job class object corresponding to the submitted job.
     """
-    if job_name is None:
-        job_name = 'job'
     if output_file is None:
         output_file = output_file_string(job_name)
 
@@ -247,7 +269,7 @@ def run_job(
         bsub_arguments += ['-q', queue]
 
     if resource_requrements is not None:
-        bsub_arguments += ['-R', str(resource_requrements)]
+        bsub_arguments += ['-R', resource_requrements]
 
     if use_gpu:
         if gpu_parameters is not None:

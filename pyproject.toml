@@ -1,9 +1,9 @@
 [project]
 name = "lsf_runner"
-version = "0.9.1"
+version = "0.10.0"
 description = "Utility to start jobs under IBM LSF"
 authors = [{ name = "Anton Golovanov" }]
-requires-python = ">3.7"
+requires-python = ">=3.11"
 
 [build-system]
 requires = ["setuptools"]
