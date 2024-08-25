@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 import subprocess
 from dataclasses import dataclass
 from typing import List
@@ -224,7 +225,7 @@ def run_job(
     resource_requrements: str = None,
     hosts: str = None,
     rerunnable: bool = False,
-    output_file: str = None,
+    output_file: str | Path = None,
     ensure_completion: bool = False,
 ) -> Job:
     """Submits an LSF job
@@ -264,7 +265,7 @@ def run_job(
     if output_file is None:
         output_file = output_file_string(job_name)
 
-    bsub_arguments = ['-J', job_name, '-o', output_file, '-n', str(tasks_number)]
+    bsub_arguments = ['-J', job_name, '-o', str(output_file), '-n', str(tasks_number)]
     if queue is not None:
         bsub_arguments += ['-q', queue]
 
