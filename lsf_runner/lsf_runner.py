@@ -1,9 +1,11 @@
 import json
 import os
-from pathlib import Path
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List
+
+import pandas as pd
 
 
 class Job:
@@ -289,14 +291,64 @@ def run_job(
     return __run_bsub_command(lsf_command, ensure_completion)
 
 
+def bhosts() -> pd.DataFrame:
+    """Requests the list of hosts available to LSF with additional information through bhosts.
+
+    Returns
+    -------
+    pd.DataFrame
+        the resulting dataframe with the information
+    """
+    output = subprocess.check_output(['bhosts', '-json', '-o', 'all'])
+    records = json.loads(output.decode())['RECORDS']
+    return pd.DataFrame.from_records(records, index='HOST_NAME')
+
+
+def lshosts() -> pd.DataFrame:
+    """Requests the list of hosts available to LSF with additional information through lshosts.
+
+    Returns
+    -------
+    pd.DataFrame
+        _description_
+    """
+    output = subprocess.check_output(
+        [
+            'lshosts',
+            '-json',
+            '-o',
+            'hname type model cpuf ncpus maxmem maxswp server res ndisks maxtmp rexpri nprocs ncores nthreads runwin',
+        ]
+    )
+    data = json.loads(output.decode())['RECORDS']
+    return pd.DataFrame.from_records(data, index='HOST_NAME')
+
+
 def get_hosts() -> List[str]:
-    """Requests the lists of hosts available to LSF
+    """Requests the list of hosts available to LSF.
 
     Returns
     -------
     list
         the resulting list of hosts
     """
-    output = subprocess.check_output(['bhosts', '-json', '-o', 'all'])
-    hosts = json.loads(output.decode())
-    return [v['HOST_NAME'] for v in hosts['RECORDS']]
+    hosts = bhosts()
+    return hosts.index.tolist()
+
+
+def lsrun(host, command, timeout=5, pass_exceptions=False):
+    try:
+        output = subprocess.check_output(
+            f'lsrun -m {host} {command}', shell=True, timeout=timeout, stderr=subprocess.STDOUT
+        )
+        return output.decode().strip()
+    except subprocess.CalledProcessError as e:
+        if pass_exceptions:
+            raise e
+        else:
+            return e.output.decode().strip()
+    except subprocess.TimeoutExpired as e:
+        if pass_exceptions:
+            raise e
+        else:
+            return f'{e}'
