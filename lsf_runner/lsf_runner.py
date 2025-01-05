@@ -352,3 +352,10 @@ def lsrun(host, command, timeout=5, pass_exceptions=False):
             raise e
         else:
             return f'{e}'
+
+
+def get_compatible_mpirun(allocation_debug=False):
+    command = 'mpirun --mca plm_rsh_agent "blaunch" --hostfile $LSB_DJOB_HOSTFILE'
+    if allocation_debug:
+        command += ' --display-allocation --display-map --report-bindings'
+    return command

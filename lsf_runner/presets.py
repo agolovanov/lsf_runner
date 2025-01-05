@@ -11,6 +11,7 @@ def run_python(
     gpu_parameters: str | None = None,
     conda_environment: str = None,
     output_file: str | None = None,
+    mpi_command: str = 'mpirun',
     **kwargs,
 ) -> Job:
     """_summary_
@@ -33,6 +34,8 @@ def run_python(
         switches to a specific environment at the beginning of the job, by default None (submit the job without changing environment)
     output_file : str | None, optional
         The log file, by default None
+    mpi_command : str, optional
+        the MPI command to use, by default 'mpirun'
 
     Also accepts any of the arguments of the generic `run_job` method.
 
@@ -46,7 +49,7 @@ def run_python(
         job_name = script
 
     if tasks_number > 1:
-        script = f'mpirun -n {tasks_number} python {script}'
+        script = f'{mpi_command} -n {tasks_number} python {script}'
     elif tasks_number == 1:
         script = f'python {script}'
     else:
