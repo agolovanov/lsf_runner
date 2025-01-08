@@ -310,7 +310,7 @@ def lshosts() -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        _description_
+        the resulting dataframe with the information
     """
     output = subprocess.check_output(
         [
@@ -324,16 +324,68 @@ def lshosts() -> pd.DataFrame:
     return pd.DataFrame.from_records(data, index='HOST_NAME')
 
 
-def get_hosts() -> List[str]:
+def bqueues() -> pd.DataFrame:
+    """Requests the list of queues available to LSF with additional information through bqueues.
+
+    Returns
+    -------
+    pd.DataFrame
+        the resulting dataframe with the information
+    """
+    output = subprocess.check_output(['bqueues', '-json', '-o', 'all'])
+    records = json.loads(output.decode())['RECORDS']
+    return pd.DataFrame.from_records(records, index='QUEUE_NAME')
+
+
+def bmgroup() -> dict:
+    """Requests the list of groups available to LSF with lists of hosts in each group.
+
+    Returns
+    -------
+    dict
+        the resulting dictionary with keys as group names and values as lists of hosts
+    """
+    output = subprocess.check_output(['bmgroup', '-r', '-w']).decode()
+    res = {}
+    for line in output.split('\n')[1:]:  # skip the header
+        data = line.split()
+        if len(data) > 1:
+            label = data[0]
+            data = data[1:]
+            if data[0] == '-':
+                res[label] = []
+            else:
+                res[label] = data
+    return res
+
+
+def get_hosts(queue=None) -> List[str]:
     """Requests the list of hosts available to LSF.
+
+    Parameters
+    ----------
+    queue : str, optional
+        the queue to filter the hosts, by default None
 
     Returns
     -------
     list
         the resulting list of hosts
     """
-    hosts = bhosts()
-    return hosts.index.tolist()
+    if queue is None:
+        hosts_groups = bhosts()
+        return hosts_groups.index.tolist()
+    else:
+        hosts_groups = bqueues().loc[queue]['HOSTS'].strip().split(' ')
+        groups = bmgroup()
+        hosts = []
+        for host in hosts_groups:
+            if host.endswith('/'):
+                group = host[:-1]
+                hosts += groups[group]
+            else:
+                hosts += host
+        return list(sorted(set(hosts)))
 
 
 def lsrun(host, command, timeout=5, pass_exceptions=False):
