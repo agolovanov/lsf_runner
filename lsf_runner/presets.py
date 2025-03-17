@@ -71,7 +71,7 @@ def run_python(
         queue,
         use_gpu=True,
         gpu_parameters=gpu_parameters,
-        resource_requrements=resource_requirements,
+        resource_requirements=resource_requirements,
         output_file=output_file,
         **kwargs,
     )

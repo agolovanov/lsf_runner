@@ -224,7 +224,7 @@ def run_job(
     *,
     use_gpu: bool = False,
     gpu_parameters: GpuParameters = None,
-    resource_requrements: str = None,
+    resource_requirements: str = None,
     hosts: str = None,
     rerunnable: bool = False,
     output_file: str | Path = None,
@@ -246,7 +246,7 @@ def run_job(
         request GPU, by default False
     gpu_parameters: lsf_runner.GpuParameters
         parameters to use with the GPU
-    resource_requrements: str
+    resource_requirements: str
         resourse requirements of the job
 
         Use the `resource_requirements` to generate.
@@ -271,8 +271,8 @@ def run_job(
     if queue is not None:
         bsub_arguments += ['-q', queue]
 
-    if resource_requrements is not None:
-        bsub_arguments += ['-R', resource_requrements]
+    if resource_requirements is not None:
+        bsub_arguments += ['-R', resource_requirements]
 
     if use_gpu:
         if gpu_parameters is not None:
