@@ -64,12 +64,14 @@ def run_python(
             ]
         )
 
+    use_gpu = gpu_parameters is not None
+
     return run_job(
         script,
         tasks_number,
         job_name,
         queue,
-        use_gpu=True,
+        use_gpu=use_gpu,
         gpu_parameters=gpu_parameters,
         resource_requirements=resource_requirements,
         output_file=output_file,
