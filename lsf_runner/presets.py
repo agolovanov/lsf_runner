@@ -87,6 +87,7 @@ def run_fbpic(
     job_name: str = 'fbpic',
     memory: str = '10G',
     gpu_memory: str | None = None,
+    gpu_model: str | None = None,
     conda_environment: str | None = None,
     output_file: str | None = None,
     select: str | None = None,
@@ -108,6 +109,8 @@ def run_fbpic(
         RAM usage, by default '10G'
     gpu_memory : str | None, optional
         GPU memory usage, by default None
+    gpu_model : str | None, optional
+        GPU model, by default None
     conda_environment : str | None, optional
         switches to a specific environment at the beginning of the job, by default None (submit the job without changing environment)
     output_file : str | None, optional
@@ -122,7 +125,9 @@ def run_fbpic(
     Job
         the Job object representing the submitted job
     """
-    gpu_parameters = GpuParameters(1, job_exclusive=True, memory_required=gpu_memory, mode='exclusive_process')
+    gpu_parameters = GpuParameters(
+        1, job_exclusive=True, memory_required=gpu_memory, mode='exclusive_process', model=gpu_model
+    )
     resources = resource_requirements(
         span=span_parameters(hosts=1),
         affinity='thread*1',
