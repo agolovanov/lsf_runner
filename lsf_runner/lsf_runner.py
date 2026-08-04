@@ -384,7 +384,7 @@ def get_hosts(queue=None) -> List[str]:
         hosts_groups = bhosts()
         return hosts_groups.index.tolist()
     else:
-        hosts_groups = bqueues().loc[queue]['HOSTS'].strip().split(' ')
+        hosts_groups = bqueues().loc[queue]['HOSTS'].split()
         groups = bmgroup()
         hosts = []
         for host in hosts_groups:
@@ -392,7 +392,7 @@ def get_hosts(queue=None) -> List[str]:
                 group = host[:-1]
                 hosts += groups[group]
             else:
-                hosts += host
+                hosts.append(host)
         return list(sorted(set(hosts)))
 
 
