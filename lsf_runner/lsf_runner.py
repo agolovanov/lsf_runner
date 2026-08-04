@@ -198,7 +198,12 @@ def retrieve_bsub_job_id(s: str):
         raise ValueError(f'No job ID found in string [{s}]')
 
 
-def __run_bsub_command(bsub_command, ensure_completion=False) -> Job:
+def __run_bsub_command(bsub_command, ensure_completion=False, dry_run=False) -> Job:
+    print(f'{dry_run=}')
+    if dry_run:
+        print(f'DRY-RUN: Running: {" ".join(bsub_command)}', flush=True)
+        return Job(0)  # Return a dummy job ID for dry run
+
     print(f'Running: {" ".join(bsub_command)}', flush=True)
     job_id = retrieve_bsub_job_id(subprocess.check_output(bsub_command, stderr=subprocess.DEVNULL).decode())
     job = Job(job_id)
@@ -229,6 +234,7 @@ def run_job(
     rerunnable: bool = False,
     output_file: str | Path = None,
     ensure_completion: bool = False,
+    dry_run: bool = False,
 ) -> Job:
     """Submits an LSF job
 
@@ -258,6 +264,8 @@ def run_job(
         the name of the file to forward the output to (-o flag)
     ensure_completion: bool, optional
         whether wait for the completion of the job and restart if its status is not DONE, by default False
+    dry_run: bool, optional
+        whether to run the job in dry-run mode (without submitting), by default False
 
     Returns
     -------
@@ -288,7 +296,7 @@ def run_job(
         bsub_arguments += ['-rn']
 
     lsf_command = ['bsub'] + bsub_arguments + [command]
-    return __run_bsub_command(lsf_command, ensure_completion)
+    return __run_bsub_command(lsf_command, ensure_completion, dry_run=dry_run)
 
 
 def bhosts() -> pd.DataFrame:
